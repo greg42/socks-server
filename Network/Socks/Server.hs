@@ -28,14 +28,14 @@ import           System.IO
 import           Control.Concurrent
 
 -- |A SocksAuthenticator is an IO action that takes an authentication method
--- and a Connection. It does what it needs to do to perform the authentication
+-- and a client Handle. It does what it needs to do to perform the authentication
 -- and returns whether is was successful or not.
-type SocksAuthenticator  = SocksAuthMethod -> Connection -> IO Bool
+type SocksAuthenticator  = SocksAuthMethod -> Handle -> IO Bool
 
--- |A SocksRequestHandler is an IO action that takes *one* SocksRequest,
--- a Connection and an initial input that was already read from the Connection's
--- Handle.
-type SocksRequestHandler = SocksRequest -> Connection -> ByteString -> IO ()
+-- |A SocksRequestHandler is an IO action that takes *one* SocksRequest, a
+-- client Handle and an initial input that was already read from the
+-- Connection's Handle.
+type SocksRequestHandler = SocksRequest -> Handle -> ByteString -> IO ()
 
 -- |An insecure(!) authenticator that always succeeds.
 alwaysSucceedAuthenticator :: SocksAuthenticator
@@ -53,11 +53,11 @@ simpleRequestHandler (SocksCmdConnect addr port) conn clientData = do
       Right handle -> do let rep = buildSocksReply $ SocksReplySuccess
                                                      -- XXX This is an ugly hack
                                                      (SocksAddrIPv4 (read "127.0.0.1")) 1
-                         BS.hPut (connHandle conn) rep
+                         BS.hPut conn rep
                          hSetBuffering handle NoBuffering
                          BS.hPut handle clientData
-                         _ <- forkIO $ proxy handle (connHandle conn)
-                         proxy (connHandle conn) handle
+                         _ <- forkIO $ proxy handle conn
+                         proxy conn handle
       Left  e -> let e' = e :: E.SomeException in putStrLn $ show e
    where proxy hdl1 hdl2 = do buf <- BS.hGetSome hdl1 1024
                               if BS.length buf == 0
@@ -85,7 +85,7 @@ forkingSocksServer host port supportedAuthMethods authenticator handler =
                         Fail _ _ msg -> error msg
       case find (`elem` am) supportedAuthMethods of
          Just am -> do BS.hPut (connHandle conn) $ buildServerVersionAuth am
-                       authOk <- authenticator am conn
+                       authOk <- authenticator am (connHandle conn)
                        when (not authOk) $ error "Authentication failed."
          Nothing -> error "No supported authentication method."
       
@@ -93,5 +93,5 @@ forkingSocksServer host port supportedAuthMethods authenticator handler =
                         parseSocksRequest
                         bs
       case preq of
-         Done i r -> handler r conn i
+         Done i r -> handler r (connHandle conn) i
          _        -> error "Cannot parse request."
