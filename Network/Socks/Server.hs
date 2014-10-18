@@ -55,6 +55,7 @@ simpleRequestHandler (SocksCmdConnect addr port) conn clientData = do
                                                      (SocksAddrIPv4 (read "127.0.0.1")) 1
                          BS.hPut (connHandle conn) rep
                          hSetBuffering handle NoBuffering
+                         BS.hPut handle clientData
                          _ <- forkIO $ proxy handle (connHandle conn)
                          proxy (connHandle conn) handle
       Left  e -> let e' = e :: E.SomeException in putStrLn $ show e
