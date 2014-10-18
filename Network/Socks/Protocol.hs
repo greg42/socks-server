@@ -24,38 +24,52 @@ import           Data.IP
 import           GHC.Word
 import           Control.Applicative
 
--- |Socks authentication method
-data SocksAuthMethod = SocksNoAuth
-                     | SocksGssapi
-                     | SocksUsernamePassword
-                     | SocksIana Word8
-                     | SocksPrivate Word8
-                     | SocksNoAcceptableAuthMethods
+-- |Socks authentication method. The client sends a list of supported
+-- authentication methods to the server, which selects one of those methods in
+-- its response.
+data SocksAuthMethod = SocksNoAuth -- ^ No authentication needed
+                     | SocksGssapi -- ^ GSSAPI Authentication
+                     | SocksUsernamePassword -- ^ Username and password
+                     | SocksIana Word8 -- ^ IANA assigned numbers
+                     | SocksPrivate Word8 -- ^ Private authentication methods
+                     | SocksNoAcceptableAuthMethods -- ^ Only sent by the server
+                                                    -- to signal that no
+                                                    -- authentication methods
+                                                    -- advertised by the client
+                                                    -- are supported
                      deriving (Show, Read, Eq)
 
--- |Socks network address
-data SocksAddrSpec = SocksAddrIPv4 IPv4 
-                   | SocksAddrIPv6 IPv6 
-                   | SocksAddrFqdn String 
+-- |Socks network address. SOCKS5 supports IPv4 and IPv6 addresses, as well as
+-- fully qualified domain names.
+data SocksAddrSpec = SocksAddrIPv4 IPv4 -- ^ An IPv4 address
+                   | SocksAddrIPv6 IPv6  -- ^ An IPv6 address
+                   | SocksAddrFqdn String  -- ^ A fully qualified domain name
                    deriving (Show, Read, Eq)
 
--- |Socks request
-data SocksRequest = SocksCmdConnect SocksAddrSpec Int
-                  | SocksCmdBind SocksAddrSpec Int
-                  | SocksCmdAsssociate SocksAddrSpec Int
+-- |Socks request. Sent by the client.
+data SocksRequest = SocksCmdConnect SocksAddrSpec Int -- ^ SOCKS5 connect request
+                  | SocksCmdBind SocksAddrSpec Int -- ^ SOCKS5 bind request
+                  | SocksCmdAsssociate SocksAddrSpec Int -- ^ SOCKS5 associate 
+                                                         -- request
                   deriving (Show, Read, Eq)
 
--- |Socks reply
-data SocksReply = SocksReplySuccess SocksAddrSpec Int
-                | SocksReplyGeneralFailure
-                | SocksReplyConnectionNotAllowed
-                | SocksReplyNetworkUnreachable
-                | SocksReplyHostUnreachable
-                | SocksReplyConnectionRefused
-                | SocksReplyTTLExpired
-                | SocksReplyCommandNotSupported
-                | SocksReplyAddressTypeNotSupported
-                | SocksReplyUnassigned Word8
+-- |Socks reply. Sent by the server.
+data SocksReply = SocksReplySuccess SocksAddrSpec Int -- ^ Success request: the 
+                                                      -- server tells the client
+                                                      -- the IP address and port
+                                                      -- number used for
+                                                      -- connecting to the
+                                                      -- remote host
+                | SocksReplyGeneralFailure -- ^ A general failure
+                | SocksReplyConnectionNotAllowed -- ^ Connection not allowed
+                | SocksReplyNetworkUnreachable -- ^ Network unreachable
+                | SocksReplyHostUnreachable -- ^ Host unreachable
+                | SocksReplyConnectionRefused -- ^ Connection refused
+                | SocksReplyTTLExpired -- ^ TTL expired
+                | SocksReplyCommandNotSupported -- ^ The client sent an
+                                                -- unsupported command
+                | SocksReplyAddressTypeNotSupported -- ^ Address type not supported
+                | SocksReplyUnassigned Word8 -- ^ Custom reply code
                 deriving (Show, Read, Eq)
 
 -- Serialization routines

@@ -7,7 +7,8 @@
  - ----------------------------------------------------------------------------
  -}
 
-{-| A simple implementation of a SOCKS5 server -}
+{-| A simple implementation of a SOCKS5 server. You can use the functions in
+ - this module to build your own SOCKS implementation. -}
 
 module Network.Socks.Server (SocksAuthenticator, SocksRequestHandler,
                              simpleRequestHandler, alwaysSucceedAuthenticator,
