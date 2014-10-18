@@ -7,7 +7,7 @@
  - ----------------------------------------------------------------------------
  -}
 
-module Network.TCPServer (Connection(..), forkingTcpServer) where
+module Network.TCPServer where
 
 import Prelude 
 import Network
